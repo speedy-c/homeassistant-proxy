@@ -38,7 +38,6 @@ jobs:
           skopeo --override-arch amd64 copy \
             --format v2s2 \
             --dest-compress-format gzip \
-            --dest-force-compress-format \
             --retry-times 3 \
             docker://ghcr.io/home-assistant/home-assistant:stable \
             docker://docker.io/speedyc/home-assistant:latest
