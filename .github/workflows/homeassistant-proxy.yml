@@ -1,5 +1,5 @@
 
-name: Home Assistant gzip proxy
+name: Home Assistant Proxy DS218+
 
 on:
   workflow_dispatch:
@@ -10,12 +10,11 @@ permissions:
   contents: read
 
 concurrency:
-  group: homeassistant-gzip-publish
+  group: homeassistant-ds218-publish
   cancel-in-progress: false
 
 jobs:
-  convert-and-push:
-    name: Convert and publish Home Assistant
+  publish:
     runs-on: ubuntu-24.04
     timeout-minutes: 120
 
@@ -27,30 +26,24 @@ jobs:
 
       - name: Login to Docker Hub
         env:
-          DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
-          DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
+          USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
+          TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
         run: |
-          echo "$DOCKERHUB_TOKEN" | \
-            skopeo login \
-              --username "$DOCKERHUB_USERNAME" \
-              --password-stdin \
-              docker.io
+          echo "$TOKEN" | skopeo login \
+            --username "$USERNAME" \
+            --password-stdin docker.io
 
-      - name: Convert image to gzip and push
+      - name: Convert amd64 image to gzip
         run: |
-          skopeo copy \
-            --all \
+          skopeo --override-arch amd64 copy \
             --format v2s2 \
             --dest-compress-format gzip \
+            --dest-force-compress-format \
             --retry-times 3 \
             docker://ghcr.io/home-assistant/home-assistant:stable \
             docker://docker.io/speedyc/home-assistant:latest
 
-      - name: Verify published image
+      - name: Verify image
         run: |
-          skopeo inspect --raw \
-            docker://docker.io/speedyc/home-assistant:latest \
-            > /dev/null
-
-          echo "Image published successfully:"
-          echo "speedyc/home-assistant:latest"
+          skopeo inspect \
+            docker://docker.io/speedyc/home-assistant:latest
